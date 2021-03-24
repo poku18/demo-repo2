@@ -2,13 +2,16 @@
 #include <stdlib.h>
 #define MAX 50
 
+//function prototypes;
+char** command_splitter(char *);
+
 struct items{
     char category[20];
     char item[20];
     int qty;
-    struct items *next; //Linked List implementation
+    //struct items *next; //Linked List implementation
 };
-char** command_splitter(char *);
+
 int main(){
     char commands[MAX];
     int i=0;
@@ -42,3 +45,5 @@ char** command_splitter(char *command){
     processed[word+1][0]='\0'; //adding a sentinel value to mark end.
     return processed;
 }
+//changes made here. 
+
