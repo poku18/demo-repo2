@@ -10,14 +10,13 @@ struct items{
     char **item;
     int *qty;
 };
-
-void process(struct items *,char **, int *);
+void insert(struct items *, char** , int *);
 
 int main(){
     char commands[MAX];
     int i=0;
-    int pos=0;
-    struct items *list=malloc(sizeof(struct items)*20);
+    int len=0; // this will track the length 
+    struct items *list=malloc(sizeof(struct items)); //this is the main array of structs
     while(1){
         //Input of commands
         scanf("%[^\n]%*c", commands);
@@ -32,11 +31,13 @@ int main(){
         if(strCompare(temp[0],"exit")){
             break;
         }
-        process(list,temp,&pos);
-        //printing parts to remove
-        printf("%s\n",list[pos].item);
-        printf("%d\n",list[pos].qty);
-        printf("%s\n",list[pos].category);
+        insert(list,temp,&len);
+        printf("%d",len);
+        for(int i=0;i<len;i++){
+            printf("%s\n",list[i].category);
+            printf("%s\n",list[i].item[0]);
+            printf("%d\n",list[i].qty[0]);
+        }
         free(temp);
 
     }
@@ -65,40 +66,49 @@ char** command_splitter(char *command){
     return processed;
 }
 
-//Function to add items in array of struct
-/*void process(struct items *list,char **split_command, int *pos){
-    list[*pos].item=split_command[1];
-    list[*pos].category=split_command[3];
-    if(split_command[0]=="add"){
-        list[*pos].qty+= (int)split_command[2];
+// Category and item insert function
+void insert(struct items *list, char** split_command, int *len){
+    if(*len==0){
+        if(strCompare("remove",split_command[0])){//first command on a category should not be "remove"
+            printf("You cannot remove what never was");
+            return;
+        }
+        list[0].category=split_command[3];
+        list[0].item=calloc(1,sizeof(char **));
+        list[0].qty=calloc(1,sizeof(int *));
+        
+        list[0].item[0]=split_command[1];
+        if(strCompare("add",split_command[0]))
+            list[0].qty[0]=atoi(split_command[2]);
     }
-    else if(split_command[0]=="add"){
-        list[*pos].qty-= (int)split_command[2];
-    }
-    *pos++;
+    /*int i,j=0;
+    if(*len>1){
+        for(i=0;i<*len;i++){
+            if(split_command[3]==list[i].category){
+                while(list[i].item[j]!=""){
+                    //insert after sorting here.
+                    j++;
+                }
+            }
+        }
+    }*/
+    (*len)++;
     return;
-}*/
-// Category insert function
-
+}
 
 //String Compare function
-int strCompare(char mj1[], char mj2[])  // function definition
+int strCompare(char mj1[], char mj2[])     
 {
     int i = 0, flag = 0;
-    while(mj1[i] != '\0' && mj2[i] != '\0') // until atleast one string ends
+    while(mj1[i] != '\0' && mj2[i] != '\0') //until atleast one string ends
     {
-    //Don't iterate if even one is unmatched
-        if(mj1[i] != mj2[i]) 
+        if(mj1[i] != mj2[i])                //Don't iterate if even one is unmatched
         {
             flag = 1;
             break;
         }
         i++;
     }
-    /*
-        If all the characters are sequentially same as well as 
-        both strings have ended
-    */
     if(flag == 0 && mj1[i] == '\0' && mj2[i] == '\0')
         return 1;
     else
