@@ -4,11 +4,11 @@
 
 //function prototypes;
 char** command_splitter(char *);
-
+int strCompare(char * , char *);
 struct items{
     char *category;
-    char *item;
-    int qty;
+    char **item;
+    int *qty;
 };
 
 void process(struct items *,char **, int *);
@@ -22,19 +22,21 @@ int main(){
         //Input of commands
         scanf("%[^\n]%*c", commands);
         char** temp = command_splitter(commands);
-        printf("%s\n",temp[0]);
-        //exist criteria/command
-        if(temp[0]=="exit"){
-            printf("anytime?");
+
+        /*while(temp[i][0]!='\0'){
+        printf("%s\n",temp[i]);
+        printf("%d",i);
+        i++;
+    }*/
+        //exit criteria/command
+        if(strCompare(temp[0],"exit")){
             break;
         }
-        //process(list,temp,&pos);
+        process(list,temp,&pos);
         //printing parts to remove
-        /*printf("%s\n",list[pos].item);
+        printf("%s\n",list[pos].item);
         printf("%d\n",list[pos].qty);
         printf("%s\n",list[pos].category);
-        */
-
         free(temp);
 
     }
@@ -64,7 +66,7 @@ char** command_splitter(char *command){
 }
 
 //Function to add items in array of struct
-void process(struct items *list,char **split_command, int *pos){
+/*void process(struct items *list,char **split_command, int *pos){
     list[*pos].item=split_command[1];
     list[*pos].category=split_command[3];
     if(split_command[0]=="add"){
@@ -75,5 +77,32 @@ void process(struct items *list,char **split_command, int *pos){
     }
     *pos++;
     return;
+}*/
+// Category insert function
+
+
+//String Compare function
+int strCompare(char mj1[], char mj2[])  // function definition
+{
+    int i = 0, flag = 0;
+    while(mj1[i] != '\0' && mj2[i] != '\0') // until atleast one string ends
+    {
+    //Don't iterate if even one is unmatched
+        if(mj1[i] != mj2[i]) 
+        {
+            flag = 1;
+            break;
+        }
+        i++;
+    }
+    /*
+        If all the characters are sequentially same as well as 
+        both strings have ended
+    */
+    if(flag == 0 && mj1[i] == '\0' && mj2[i] == '\0')
+        return 1;
+    else
+        return 0;
 }
+
 
