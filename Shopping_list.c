@@ -1,146 +1,184 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define MAX 50
-#define threshold 5
-//function prototypes;
-char** command_splitter(char *);
-int strCompare(char * , char *);
-struct items{
-    char *category; //string
-    char **item; //array of strings
-    int *qty; //indexing parrallel list
+#define MAX 50              //maximum command length
+#define threshold 100       //maximum array sizes
+//Structure definition
+struct items
+{
+    char *category;         //string
+    char **item;            //array of strings
+    int *qty;               //indexing parrallel list
     int len_item;
 };
-int binarySearch(char ** , int , int , char * );
-int insert_category(struct items* ,char** , int );
-void insert_items(char **, char* , int*, char*, int);
-void insert_qty(int*, char* , int );
-void qty_update(struct items , char* , char* , int);
-int memory_refill(char **item,int len_item);
-void insert(struct items *, char** , int *);
-void print(struct items *,int);
+//function prototypes;
+char **command_splitter(char *);
+int strCompare(char *, char *);
+int binarySearch(char **, int, int, char *);
+int insert_category(struct items *, char **, int);
+void insert_items(char **, char *, int *, char *, int);
+void insert_qty(int *, char *, int);
+int qty_update(struct items, char *, char *, int);
+void delete_item(struct items, int);
+int memory_refill(char **item, int len_item);
+void insert(struct items *, char **, int *);
+void print(struct items *, int);
+void print_category(struct items *, int, char *);
+int validate_command(char** );
+int isnum(char* );
 
-int main(){
+int main()
+{
     char commands[MAX];
-    int i=0;
-    int len_list=0; // this will track the length 
-    struct items *list=malloc(sizeof(struct items)*threshold); //this is the main array of structs
-    while(1){
+    int i = 0;
+    int len_list = 0;                                              // this will track the length
+    struct items *list = malloc(sizeof(struct items) * threshold); //this is the main array of structs
+    while (1)
+    {
         //Input of commands
         scanf("%[^\n]%*c", commands);
-        char** temp = command_splitter(commands);
-
-        //exit criteria/command
-        if(strCompare(temp[0],"exit")){
+        char **temp = command_splitter(commands);
+        if(!validate_command(temp))
+            continue;
+        //exit criteria
+        if (strCompare(temp[0], "exit"))
+        {
             break;
         }
-        insert(list,temp,&len_list);
-        print(list,len_list);
-        
+
+        if (strCompare(temp[0], "print") && !strCompare(temp[1], ""))
+        {
+            print_category(list, len_list, temp[1]);
+            continue;
+        }
+        if (strCompare(temp[0], "print"))
+        {
+            //printf("temp[1]: %s", temp[1]);
+            print(list, len_list);
+            continue;
+        }
+
+        insert(list, temp, &len_list);
         free(temp);
     }
     free(list);
     return 0;
 }
-char** command_splitter(char *command){
-    char** processed=malloc(20 * sizeof(char*));
-    for (int i =0 ; i < 20; i++){
+char **command_splitter(char *command)
+{   
+    char **processed = malloc(20 * sizeof(char *));
+    for (int i = 0; i < 20; i++)
+    {
         processed[i] = malloc(20 * sizeof(char));
-        }
-    int i=0,letter=0,word=0;
+    }
+    int i = 0, letter = 0, word = 0;
 
-    while(command[i]!='\0'){
-        if(command[i]==' '){
-            letter=0; //letter index back to 0 for next word
-            word++; //next word
+    while (command[i] != '\0')
+    {
+        if (command[i] == ' ')
+        {
+            letter = 0; //letter index back to 0 for next word
+            word++;     //next word
         }
-        else{
-            processed[word][letter]=command[i];
+        else
+        {
+            processed[word][letter] = command[i];
             letter++;
         }
         i++;
     }
-    processed[word+1][0]='\0'; //adding a sentinel value to mark end.
+    processed[word + 1][0] = '\0'; //adding a sentinel value to mark end.
     return processed;
 }
 
 // Category and item insert function
-void insert(struct items *list, char** split_command, int *len){
-    if(*len==0){
-        if(strCompare("remove",split_command[0])){//first command on a category should not be "remove"
-            printf("You cannot remove what never was");
+void insert(struct items *list, char **split_command, int *len)
+{
+    if (*len == 0)
+    {
+        if (strCompare("remove", split_command[0]))
+        { //first command on a category should not be "remove"
+            printf("Nothing to remove. Try adding some items first.\n");
             return;
         }
-        list[0].category=split_command[3];
-        list[0].item=calloc(threshold,sizeof(char **));
-        list[0].qty=calloc(threshold,sizeof(int *));
-        
-        list[0].item[0]=split_command[1];
-        if(strCompare("add",split_command[0]))
-            list[0].qty[0]=atoi(split_command[2]);
+        list[0].category = split_command[3];
+        list[0].item = calloc(threshold, sizeof(char **));
+        list[0].qty = calloc(threshold, sizeof(int *));
+
+        list[0].item[0] = split_command[1];
+        if (strCompare("add", split_command[0]))
+            list[0].qty[0] = atoi(split_command[2]);
         (*len)++;
-        list[0].len_item=1;
+        list[0].len_item = 1;
         return;
     }
-    int i=0,j=0,pos,category_match=0;
-    if(*len>0){
-        for(i=0;i<(*len);i++){
-            if(strCompare(split_command[3],list[i].category)){
-                category_match=1;
+    int i = 0, j = 0, pos, category_match = 0;
+    if (*len > 0)
+    {
+        for (i = 0; i < (*len); i++)
+        {
+            if (strCompare(split_command[3], list[i].category))
+            {
+                category_match = 1;
                 break;
             }
         }
-        if(category_match){            
-            //Let's reallocate memory if length exceeded previous initialization
-                pos=binarySearch(list[i].item, 0,list[i].len_item-1, split_command[1]);
-                //inserting new items
-                if(pos==-1){ //NEW ITEM_NAME INSERTION
-                    if(list[i].len_item>=threshold){
-                        int status=memory_refill(list[i].item,list[i].len_item);
-                        if(!status){
-                            printf("Error reallocating. Exiting now.");
+        if (category_match)
+        {
+            pos = binarySearch(list[i].item, 0, list[i].len_item - 1, split_command[1]);
+            //inserting new items
+            if (pos == -1)
+            {
+                if (strCompare(split_command[0], "remove"))
+                {
+                    printf("The item does not exist in this category\n");
+                    return;
+                }
+                if (list[i].len_item >= threshold)
+                {
+                    int status = memory_refill(list[i].item, list[i].len_item);
+                    if (!status)
+                    {
+                        printf("Error reallocating. Exiting now.");
                         return;
-                        }
                     }
-                    insert_items(list[i].item,split_command[1],
-                    list[i].qty, split_command[2],
-                    list[i].len_item);
-                    list[i].len_item++;
                 }
-                else{
-                    qty_update(list[i], split_command[0], split_command[2],pos);
-                }
+                list[i].len_item++;
+                insert_items(list[i].item, split_command[1],
+                             list[i].qty, split_command[2],
+                             list[i].len_item);
+            }
+            else
+            {
+                list[i].len_item = qty_update(list[i], split_command[0], split_command[2], pos);
+            }
         }
-        else{
+        else
+        {
             //New Category
-            
-            if(strCompare("remove",split_command[0]))
-            {   //first command on a category should not be "remove"
-                printf("You cannot remove what never was");
+            if (strCompare("remove", split_command[0]))
+            { //first command on a category should not be "remove"
+                printf("This category does not exist.\n");
                 return;
             }
             (*len)++;
-            int i= (*len);
-            i= insert_category(list,split_command, i);
+            int i = (*len);
+            i = insert_category(list, split_command, i);
             //list[i].category=split_command[3];
-            printf("Value??: %d", i);
-            list[i].item=calloc(threshold,sizeof(char **));
-            list[i].qty=calloc(threshold,sizeof(int *));
-            list[i].item[0]=split_command[1];
-            if(strCompare("add",split_command[0]))
-                list[i].qty[0]=atoi(split_command[2]);
-            
-            list[i].len_item=1;
-            return;
+            //printf("Value??: %d", i);
+            list[i].item = calloc(threshold, sizeof(char **));
+            list[i].qty = calloc(threshold, sizeof(int *));
+            list[i].item[0] = split_command[1];
+            if (strCompare("add", split_command[0]))
+                list[i].qty[0] = atoi(split_command[2]);
 
-        }  
-        
+            list[i].len_item = 1;
+            return;
+        }
     }
-    
     return;
 }
 //Binary Search for the position of existing item
-int binarySearch(char ** item, int low, int high, char * name)
+int binarySearch(char **item, int low, int high, char *name)
 {
     if (high < low)
         return -1;
@@ -152,107 +190,207 @@ int binarySearch(char ** item, int low, int high, char * name)
     return binarySearch(item, low, (mid - 1), name);
 }
 //Inserting new category
-int insert_category(struct items *list,char** split_command, int len_list){
+int insert_category(struct items *list, char **split_command, int len_list)
+{
     int i;
-    char* new_category=split_command[3];
-    if(len_list>2){
-        for (i = len_list - 2; (i >= 0 && list[i].category[0] > new_category[0]); i--){
-            list[i+1] = list[i];
+    char *new_category = split_command[3];
+    if (len_list > 2)
+    {
+        for (i = len_list - 2; (i >= 0 && list[i].category[0] > new_category[0]); i--)
+        {
+            list[i + 1] = list[i];
         }
-        list[i+1].category = new_category;
-        return i+1;
+        list[i + 1].category = new_category;
+        return i + 1;
     }
-    if(list[0].category[0]>new_category[0]){
-        list[1]=list[0];
-        list[0].category=new_category;
+    if (list[0].category[0] > new_category[0])
+    {
+        list[1] = list[0];
+        list[0].category = new_category;
         return 0;
-        
     }
-    else{
-        list[1].category=new_category;
+    else
+    {
+        list[1].category = new_category;
         return 1;
     }
 }
 //Insert while sorting function in Items and qty
-void insert_items(char** item, char* new_item, int* qty, char* new_qty, int len_item){
+void insert_items(char **item, char *new_item, int *qty, char *new_qty, int len_item)
+{
     int i;
-    int new= atoi(new_qty);
-    if(len_item>2){
-        for (i = len_item - 2; (i >= 0 && item[i][0] > new_item[0]); i--){
+    int new = atoi(new_qty);
+    if (len_item > 2)
+    {
+        for (i = len_item - 2; (i >= 0 && item[i][0] > new_item[0]); i--)
+        {
             item[i + 1] = item[i];
-            qty[i+1]=qty[i];
+            qty[i + 1] = qty[i];
         }
-        item[i+1] = new_item;
-        qty[i+1]=new;
+        item[i + 1] = new_item;
+        qty[i + 1] = new;
         return;
     }
-    if(item[0][0]>new_item[0]){
-        item[1]=item[0];
-        item[0]=new_item;
+    if (item[0][0] > new_item[0])
+    {
+        item[1] = item[0];
+        item[0] = new_item;
         //doing the same for qty
-        qty[1]=qty[0];
-        qty[0]=new;
-        
+        qty[1] = qty[0];
+        qty[0] = new;
     }
-    else{
-        item[1]=new_item;
-        qty[1]=new;
+    else
+    {
+        item[1] = new_item;
+        qty[1] = new;
     }
     return;
 }
-//Qty update if Item exists
-void qty_update(struct items list, char* command, char* qty, int pos){
-    int qty_update=atoi(qty);
-    if(strCompare(command, "add")){
-        list.qty[pos]+=qty_update;
+//Quantity update if Item exists
+int qty_update(struct items list, char *command, char *qty, int pos)
+{
+    int qty_update = atoi(qty);
+    if (strCompare(command, "add"))
+    {
+        list.qty[pos] += qty_update;
     }
-    else if(strCompare(command, "remove")){
-        list.qty[pos]-=qty_update;
-        if(list.qty[pos]==0){
-            //delete_item(list.item, pos);
+    else if (strCompare(command, "remove"))
+    {
+        list.qty[pos] -= qty_update;
+        if (list.qty[pos] <= 0)
+        {
+            delete_item(list, pos);
+            list.len_item--;
         }
     }
+    return list.len_item;
 }
-
+//Delete item function
+void delete_item(struct items list, int pos)
+{
+    int i;
+    for (i = pos; i < list.len_item; i++)
+    {
+        list.item[i] = list.item[i + 1];
+        list.qty[i] = list.qty[i + 1]; //similarly for parallel list
+    }
+    return;
+}
 // Print function
-void print(struct items *list, int len_list){
-    int i,j=0;
-    for(i=0;i<len_list;i++){
-        printf("Category: %s\n",list[i].category);
-        for(j=0;j<list[i].len_item;j++){
-            printf("%s: ",list[i].item[j]);
-            printf("%d\n",list[i].qty[j]);
+void print(struct items *list, int len_list)
+{
+    int i, j = 0;
+    for (i = 0; (i < len_list && list[i].len_item > 0); i++)
+    {
+        printf("Category: %s\n", list[i].category);
+        for (j = 0; j < list[i].len_item; j++)
+        {
+            printf("%s ", list[i].item[j]);
+            printf("%d\n", list[i].qty[j]);
         }
         printf("\n");
     }
 }
+//Print category
+void print_category(struct items *list, int len_list, char *category)
+{
+    int i = 0, j = 0, match = 0;
+    while (i < len_list && list[i].len_item > 0)
+    {
+        if (strCompare(category, list[i].category))
+        {
+            match = 1;
+            break;
+        }
+        i++;
+    }
+    if (match)
+    {
+        printf("\nCategory: %s\n", list[i].category);
+        for (j = 0; j < list[i].len_item; j++)
+        {
+            printf("%s ", list[i].item[j]);
+            printf("%d\n", list[i].qty[j]);
+        }
+        printf("\n");
+        return;
+    }
+    printf("No such category exists.\n");
+    return;
+}
+
 //Memory refill reallocation
-int memory_refill(char **item,int len_item){
-    char **more_items= realloc(item, sizeof(char **)*(len_item+5)); 
-        if(more_items==NULL) return 0; 
-                 
-    item= more_items; 
+int memory_refill(char **item, int len_item)
+{
+    char **more_items = realloc(item, sizeof(char **) * (len_item + 5));
+    if (more_items == NULL)
+        return 0;
+
+    item = more_items;
     return 1;
 }
 //String Compare function
-int strCompare(char mj1[], char mj2[])     
-{  
+int strCompare(char mj1[], char mj2[])
+{
     int i = 0, flag = 0;
-    while(mj1[i]!='\0' && mj2[i]!='\0') //until atleast one string ends
-    {  
-        if(mj1[i] != mj2[i])                //Don't iterate if even one is unmatched
+    while (mj1[i] != '\0' && mj2[i] != '\0') //until atleast one string ends
+    {
+        if (mj1[i] != mj2[i]) //Don't iterate if even one is unmatched
         {
             flag = 1;
             break;
         }
         i++;
     }
-    //printf("MJ1:%c i:%d\n",mj1[i],i);
-    //printf("MJ2:%c i:%d\n",mj2[i],i);
-    if(flag == 0 && mj1[i] == '\0' && mj2[i] == '\0')
+    if (flag == 0 && mj1[i] == '\0' && mj2[i] == '\0')
         return 1;
     else
         return 0;
 }
 
+int validate_command(char** input){
+    //validating input
+    if(strCompare(input[0], "print")||strCompare(input[0], "exit")){
+        return 1;
+    }
+    else if(strCompare(input[0], "add")||strCompare(input[0], "remove")){
+        if(strCompare(input[1],"") && strCompare(input[1],"\0")){
+            printf("No item specified. Please enter an item name.\n");
+            return 0;
+        }
+        else{
+            if(strCompare(input[2],"")){
+                printf("No quantity specified. Please enter a quantity to proceed.\n");
+                return 0;
+            }
+            else if(!isnum(input[2])){
+                printf("Invalid quantity. Please enter a numeric value.\n");
+                return 0;
+            }
+            else{
+                if(strCompare(input[3],"") && strCompare(input[3],"\0")){
+                    printf("No Category specified. Please enter a category.\n");
+                    return 0;
+                }
+            }
+        }
+    }           
+    else{
+        printf("Invalid command. Please try add, remove, print or exit.\n");
+        return 0;
+    }
+    return 1;
+}
 
+int isnum(char* input){
+    int i=0,isDigit=0, count=0;
+    while(input[i]!='\0'){
+        if(input[i]>=48 && input[i]<=57){
+            i++;
+        }
+        else{
+            return 0;
+        }
+    }
+    return 1;
+}
