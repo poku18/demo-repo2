@@ -33,12 +33,13 @@ int main()
     int len_list = 0;                                              // this will track the length
     struct items *list = malloc(sizeof(struct items) * threshold); //this is the main array of structs
     while (1)
-    {
+    {   
         //Input of commands
-        scanf("%[^\n]%*c", commands);
+        scanf(" %[^\n]%*c", commands);
         char **temp = command_splitter(commands);
         if(!validate_command(temp))
             continue;
+    
         //exit criteria
         if (strCompare(temp[0], "exit"))
         {
@@ -374,7 +375,10 @@ int validate_command(char** input){
                 }
             }
         }
-    }           
+    }   
+    else if(strCompare(input[0],"")){
+        return -1;
+    }        
     else{
         printf("Invalid command. Please try add, remove, print or exit.\n");
         return 0;
