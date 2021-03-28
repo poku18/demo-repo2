@@ -1,13 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define MAX 50              //maximum command length
-#define threshold 100       //maximum array sizes
+#define MAX 50        //maximum command length
+#define threshold 100 //maximum array sizes
 //Structure definition
 struct items
 {
-    char *category;         //string
-    char **item;            //array of strings
-    int *qty;               //indexing parrallel list
+    char *category; //string
+    char **item;    //array of strings
+    int *qty;       //indexing parrallel list
     int len_item;
 };
 //function prototypes;
@@ -23,8 +23,8 @@ int memory_refill(char **item, int len_item);
 void insert(struct items *, char **, int *);
 void print(struct items *, int);
 void print_category(struct items *, int, char *);
-int validate_command(char** );
-int isnum(char* );
+int validate_command(char **);
+int isnum(char *);
 
 int main()
 {
@@ -33,13 +33,13 @@ int main()
     int len_list = 0;                                              // this will track the length
     struct items *list = malloc(sizeof(struct items) * threshold); //this is the main array of structs
     while (1)
-    {   
+    {
         //Input of commands
         scanf(" %[^\n]%*c", commands);
         char **temp = command_splitter(commands);
-        if(!validate_command(temp))
+        if (!validate_command(temp))
             continue;
-    
+
         //exit criteria
         if (strCompare(temp[0], "exit"))
         {
@@ -65,7 +65,7 @@ int main()
     return 0;
 }
 char **command_splitter(char *command)
-{   
+{
     char **processed = malloc(20 * sizeof(char *));
     for (int i = 0; i < 20; i++)
     {
@@ -283,14 +283,15 @@ void print(struct items *list, int len_list)
     int i, j = 0;
     for (i = 0; (i < len_list && list[i].len_item > 0); i++)
     {
-        printf("Category: %s\n", list[i].category);
+        printf("\nCategory: %s\n", list[i].category);
         for (j = 0; j < list[i].len_item; j++)
         {
             printf("%s ", list[i].item[j]);
             printf("%d\n", list[i].qty[j]);
         }
-        printf("\n");
+        
     }
+    printf("\n");
 }
 //Print category
 void print_category(struct items *list, int len_list, char *category)
@@ -349,50 +350,65 @@ int strCompare(char mj1[], char mj2[])
         return 0;
 }
 
-int validate_command(char** input){
-    //validating input
-    if(strCompare(input[0], "print")||strCompare(input[0], "exit")){
+int validate_command(char **input)
+{
+    //validating input and giving appropriate error messages
+    if (strCompare(input[0], "print") || strCompare(input[0], "exit"))
+    {
         return 1;
     }
-    else if(strCompare(input[0], "add")||strCompare(input[0], "remove")){
-        if(strCompare(input[1],"") && strCompare(input[1],"\0")){
+    else if (strCompare(input[0], "add") || strCompare(input[0], "remove"))
+    {
+        if (strCompare(input[1], "") && strCompare(input[1], "\0"))
+        {
             printf("No item specified. Please enter an item name.\n");
             return 0;
         }
-        else{
-            if(strCompare(input[2],"")){
+        else
+        {
+            if (strCompare(input[2], ""))
+            {
                 printf("No quantity specified. Please enter a quantity to proceed.\n");
                 return 0;
             }
-            else if(!isnum(input[2])){
+            else if (!isnum(input[2]))
+            {
                 printf("Invalid quantity. Please enter a numeric value.\n");
                 return 0;
             }
-            else{
-                if(strCompare(input[3],"") && strCompare(input[3],"\0")){
+            else
+            {
+                if (strCompare(input[3], "") && strCompare(input[3], "\0"))
+                {
                     printf("No Category specified. Please enter a category.\n");
                     return 0;
                 }
             }
         }
-    }   
-    else if(strCompare(input[0],"")){
+    }
+    else if (strCompare(input[0], ""))
+    {
         return -1;
-    }        
-    else{
+    }
+    else
+    {
         printf("Invalid command. Please try add, remove, print or exit.\n");
         return 0;
     }
     return 1;
 }
 
-int isnum(char* input){
-    int i=0,isDigit=0, count=0;
-    while(input[i]!='\0'){
-        if(input[i]>=48 && input[i]<=57){
+int isnum(char *input)
+{
+    int i = 0, isDigit = 0, count = 0;
+    while (input[i] != '\0')
+    {
+        if (input[i] >= 48 && input[i] <= 57)
+        {
             i++;
         }
-        else{
+        else
+        {
             return 0;
         }
     }
