@@ -1,0 +1,10 @@
+add tomatoes 6 produce
+add onions 3 produce
+add carrots 2 produce
+remove carrots 5 produce
+add carrots 2 frozen
+add milk 2 dairy
+add eggs 12 dairy
+remove milk 1 dairy
+print
+exit

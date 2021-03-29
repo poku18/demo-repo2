@@ -1,7 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+
 #define MAX 50        //maximum command length
 #define threshold 100 //maximum array sizes
+#define buffer_size 100
+#define add "add"
+#define remove "remove"
+#define exit "exit"
+#define print_statement "print"
 //Structure definition
 struct items
 {
@@ -14,6 +20,7 @@ struct items
 char **command_splitter(char *);
 int strCompare(char *, char *);
 int binarySearch(char **, int, int, char *);
+int binarySearch_category(struct items * , int , int , char *);
 int insert_category(struct items *, char **, int);
 void insert_items(char **, char *, int *, char *, int);
 void insert_qty(int *, char *, int);
@@ -31,11 +38,17 @@ int main()
     char commands[MAX];
     int i = 0;
     int len_list = 0;                                              // this will track the length
-    struct items *list = malloc(sizeof(struct items) * threshold); //this is the main array of structs
+    struct items *list = calloc(threshold,sizeof(struct items)); //this is the main array of structs
+    char buffer[buffer_size];
     while (1)
     {
         //Input of commands
-        scanf(" %[^\n]%*c", commands);
+        //scanf(" %[^\n]%*c", commands);
+        fgets(commands, MAX, stdin);
+        //commands[strcspn(commands,"\r\n")]=0;
+        if(commands[0]=='\n'||strCompare(commands,"")||commands[0]==' '){
+            continue;
+        }
         char **temp = command_splitter(commands);
         if (!validate_command(temp))
             continue;
@@ -53,7 +66,6 @@ int main()
         }
         if (strCompare(temp[0], "print"))
         {
-            //printf("temp[1]: %s", temp[1]);
             print(list, len_list);
             continue;
         }
@@ -65,15 +77,16 @@ int main()
     return 0;
 }
 char **command_splitter(char *command)
-{
-    char **processed = malloc(20 * sizeof(char *));
-    for (int i = 0; i < 20; i++)
-    {
-        processed[i] = malloc(20 * sizeof(char));
-    }
-    int i = 0, letter = 0, word = 0;
+{   int i;
 
-    while (command[i] != '\0')
+    char **processed = calloc(20, sizeof(char *));
+    for (i = 0; i < 20; i++)
+    {
+        processed[i] = calloc(20, sizeof(char));
+    }
+    int letter = 0, word = 0;
+    i=0;
+    while (command[i] != '\n')
     {
         if (command[i] == ' ')
         {
@@ -93,12 +106,14 @@ char **command_splitter(char *command)
 
 // Category and item insert function
 void insert(struct items *list, char **split_command, int *len)
-{
+{   
     if (*len == 0)
     {
         if (strCompare("remove", split_command[0]))
         { //first command on a category should not be "remove"
-            printf("Nothing to remove. Try adding some items first.\n");
+            char buffer[buffer_size];
+            sprintf(buffer,"Nothing to remove. Try adding some items first.\n");
+            printf("%s",buffer);
             return;
         }
         list[0].category = split_command[3];
@@ -114,32 +129,28 @@ void insert(struct items *list, char **split_command, int *len)
     }
     int i = 0, j = 0, pos, category_match = 0;
     if (*len > 0)
-    {
-        for (i = 0; i < (*len); i++)
-        {
-            if (strCompare(split_command[3], list[i].category))
-            {
-                category_match = 1;
-                break;
-            }
-        }
-        if (category_match)
+    {   
+        category_match = binarySearch_category(list, 0, (*len) - 1, split_command[3]);
+        i= category_match;
+        if (category_match!=-1)
         {
             pos = binarySearch(list[i].item, 0, list[i].len_item - 1, split_command[1]);
             //inserting new items
             if (pos == -1)
-            {
+            {   char buffer[buffer_size];
                 if (strCompare(split_command[0], "remove"))
-                {
-                    printf("The item does not exist in this category\n");
+                {   
+                    sprintf(buffer,"The item does not exist in this category\n");
+                    printf("%s",buffer);
                     return;
                 }
                 if (list[i].len_item >= threshold)
                 {
                     int status = memory_refill(list[i].item, list[i].len_item);
                     if (!status)
-                    {
-                        printf("Error reallocating. Exiting now.");
+                    {   
+                        sprintf(buffer,"Error reallocating. Exiting now.");
+                        printf("%s",buffer);
                         return;
                     }
                 }
@@ -158,14 +169,16 @@ void insert(struct items *list, char **split_command, int *len)
             //New Category
             if (strCompare("remove", split_command[0]))
             { //first command on a category should not be "remove"
-                printf("This category does not exist.\n");
+                char buffer[buffer_size];
+                sprintf(buffer, "This category does not exist.\n");
+                printf("%s",buffer);
                 return;
             }
             (*len)++;
             int i = (*len);
             i = insert_category(list, split_command, i);
             //list[i].category=split_command[3];
-            //printf("Value??: %d", i);
+            //sprintf("Value??: %d", i);
             list[i].item = calloc(threshold, sizeof(char **));
             list[i].qty = calloc(threshold, sizeof(int *));
             list[i].item[0] = split_command[1];
@@ -189,6 +202,18 @@ int binarySearch(char **item, int low, int high, char *name)
     if (name[0] > item[mid][0])
         return binarySearch(item, (mid + 1), high, name);
     return binarySearch(item, low, (mid - 1), name);
+}
+//Binary Search for the position of existing Category
+int binarySearch_category(struct items* list, int low, int high, char *name)
+{
+    if (high < low)
+        return -1;
+    int mid = (low + high) / 2; /*low + (high - low)/2;*/
+    if (strCompare(name, list[mid].category))
+        return mid;
+    if (name[0] > list[mid].category[0])
+        return binarySearch_category(list, (mid + 1), high, name);
+    return binarySearch_category(list, low, (mid - 1), name);
 }
 //Inserting new category
 int insert_category(struct items *list, char **split_command, int len_list)
@@ -279,15 +304,18 @@ void delete_item(struct items list, int pos)
 }
 // Print function
 void print(struct items *list, int len_list)
-{
+{   char buffer[buffer_size];
     int i, j = 0;
     for (i = 0; (i < len_list && list[i].len_item > 0); i++)
     {
-        printf("\nCategory: %s\n", list[i].category);
+        sprintf(buffer,"\nCategory: %s\n", list[i].category);
+        printf("%s",buffer);
         for (j = 0; j < list[i].len_item; j++)
-        {
-            printf("%s ", list[i].item[j]);
-            printf("%d\n", list[i].qty[j]);
+        {   
+            sprintf(buffer,"%s ", list[i].item[j]);
+            printf("%s",buffer);
+            sprintf(buffer,"%d\n", list[i].qty[j]);
+            printf("%s", buffer);
         }
         
     }
@@ -306,13 +334,15 @@ void print_category(struct items *list, int len_list, char *category)
         }
         i++;
     }
+    char buffer[buffer_size];
     if (match)
-    {
-        printf("\nCategory: %s\n", list[i].category);
+    {   
+        sprintf(buffer,"\nCategory: %s\n", list[i].category);
+        printf("%s", buffer);
         for (j = 0; j < list[i].len_item; j++)
         {
-            printf("%s ", list[i].item[j]);
-            printf("%d\n", list[i].qty[j]);
+            sprintf(buffer,"%s %d\n", list[i].item[j],list[i].qty[j]);
+            printf("%s",buffer);
         }
         printf("\n");
         return;
@@ -353,11 +383,11 @@ int strCompare(char mj1[], char mj2[])
 int validate_command(char **input)
 {
     //validating input and giving appropriate error messages
-    if (strCompare(input[0], "print") || strCompare(input[0], "exit"))
+    if (strCompare(input[0], print_statement) || strCompare(input[0], exit))
     {
         return 1;
     }
-    else if (strCompare(input[0], "add") || strCompare(input[0], "remove"))
+    else if (strCompare(input[0], add) || strCompare(input[0], remove))
     {
         if (strCompare(input[1], "") && strCompare(input[1], "\0"))
         {
