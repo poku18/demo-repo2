@@ -1,3 +1,13 @@
+/*!DOCSTRING
+*           Project: Shopping list
+*           Author: Pragya Bhandari
+*           Implementation: Array of Structs
+*           Description: Structure has the following components 
+*              1. Category (family of items)
+*              2. List of Items 
+*              3. List of Quantities (corresponding to indices of Items)
+*              4. Length of list of items (to track its length)
+*/
 #include <stdio.h>
 #include <stdlib.h>
 
