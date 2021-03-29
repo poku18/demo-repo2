@@ -4,6 +4,7 @@
 #define MAX 50        //maximum command length
 #define threshold 100 //maximum array sizes
 #define buffer_size 100
+#define MAX_QTY 1000
 #define add "add"
 #define remove "remove"
 #define exit "exit"
@@ -53,17 +54,17 @@ int main()
             continue;
 
         //exit criteria
-        if (strCompare(temp[0], "exit"))
+        if (strCompare(temp[0], exit))
         {
             break;
         }
 
-        if (strCompare(temp[0], "print") && !strCompare(temp[1], ""))
+        if (strCompare(temp[0], print_statement) && !strCompare(temp[1], ""))
         {
             print_category(list, len_list, temp[1]);
             continue;
         }
-        if (strCompare(temp[0], "print"))
+        if (strCompare(temp[0], print_statement))
         {
             print(list, len_list);
             continue;
@@ -78,6 +79,7 @@ int main()
         free(list[i].category);
     }
     free(list);
+    list=NULL;
     return 0;
 }
 char **command_splitter(char *command)
@@ -113,7 +115,7 @@ void insert(struct items *list, char **split_command, int *len)
 {   
     if (*len == 0)
     {
-        if (strCompare("remove", split_command[0]))
+        if (strCompare(remove, split_command[0]))
         { //first command on a category should not be "remove"
             char buffer[buffer_size];
             sprintf(buffer,"Nothing to remove. Try adding some items first.\n");
@@ -125,7 +127,7 @@ void insert(struct items *list, char **split_command, int *len)
         list[0].qty = calloc(threshold, sizeof(int *));
 
         list[0].item[0] = split_command[1];
-        if (strCompare("add", split_command[0]))
+        if (strCompare(add, split_command[0]))
             list[0].qty[0] = atoi(split_command[2]);
         (*len)++;
         list[0].len_item = 1;
@@ -142,7 +144,7 @@ void insert(struct items *list, char **split_command, int *len)
             //inserting new items
             if (pos == -1)
             {   char buffer[buffer_size];
-                if (strCompare(split_command[0], "remove"))
+                if (strCompare(split_command[0], remove))
                 {   
                     sprintf(buffer,"The item does not exist in this category\n");
                     printf("%s",buffer);
@@ -171,7 +173,7 @@ void insert(struct items *list, char **split_command, int *len)
         else
         {
             //New Category
-            if (strCompare("remove", split_command[0]))
+            if (strCompare(remove, split_command[0]))
             { //first command on a category should not be "remove"
                 char buffer[buffer_size];
                 sprintf(buffer, "This category does not exist.\n");
@@ -186,7 +188,7 @@ void insert(struct items *list, char **split_command, int *len)
             list[i].item = calloc(threshold, sizeof(char **));
             list[i].qty = calloc(threshold, sizeof(int *));
             list[i].item[0] = split_command[1];
-            if (strCompare("add", split_command[0]))
+            if (strCompare(add, split_command[0]))
                 list[i].qty[0] = atoi(split_command[2]);
 
             list[i].len_item = 1;
@@ -280,11 +282,11 @@ void insert_items(char **item, char *new_item, int *qty, char *new_qty, int len_
 int qty_update(struct items list, char *command, char *qty, int pos)
 {
     int qty_update = atoi(qty);
-    if (strCompare(command, "add"))
+    if (strCompare(command, add))
     {
         list.qty[pos] += qty_update;
     }
-    else if (strCompare(command, "remove"))
+    else if (strCompare(command, remove))
     {
         list.qty[pos] -= qty_update;
         if (list.qty[pos] <= 0)
@@ -385,7 +387,8 @@ int strCompare(char mj1[], char mj2[])
 }
 
 int validate_command(char **input)
-{
+{   char* ptr;
+    long qty= strtoul(input[2],&ptr,10);
     //validating input and giving appropriate error messages
     if (strCompare(input[0], print_statement) || strCompare(input[0], exit))
     {
@@ -405,9 +408,9 @@ int validate_command(char **input)
                 printf("No quantity specified. Please enter a quantity to proceed.\n");
                 return 0;
             }
-            else if (!isnum(input[2]))
+            else if (!isnum(input[2])|| qty>MAX_QTY)
             {
-                printf("Invalid quantity. Please enter a numeric value.\n");
+                printf("Invalid quantity. Please enter a reasonable numeric value.\n");
                 return 0;
             }
             else
