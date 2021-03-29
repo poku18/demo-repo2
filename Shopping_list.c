@@ -43,9 +43,8 @@ int main()
     while (1)
     {
         //Input of commands
-        //scanf(" %[^\n]%*c", commands);
         fgets(commands, MAX, stdin);
-        //commands[strcspn(commands,"\r\n")]=0;
+
         if(commands[0]=='\n'||strCompare(commands,"")||commands[0]==' '){
             continue;
         }
@@ -72,6 +71,11 @@ int main()
 
         insert(list, temp, &len_list);
         free(temp);
+    }
+    for(i=0;i<len_list;i++){
+        free(list[i].item);
+        free(list[i].qty);
+        free(list[i].category);
     }
     free(list);
     return 0;
